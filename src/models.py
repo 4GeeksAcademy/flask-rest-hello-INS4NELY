@@ -4,6 +4,14 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 db = SQLAlchemy()
 
+class Follower(db.Model):
+    __tablename__ = 'followers'
+
+    user_from_id: Mapped[int] = mapped_column(ForeignKey('users.id'), primary_key=True)
+    user_to_id: Mapped['int'] = mapped_column(ForeignKey('users.id'), primary_key=True)
+    follower_user: Mapped['User'] = relationship('User', foreign_keys =[user_from_id], back_populates='following')
+    followed_user: Mapped['User'] = relationship('User', foreign_keys =[user_to_id], back_populates='followers')
+
 class User(db.Model):
     __tablename__ = 'users'
 
@@ -14,8 +22,8 @@ class User(db.Model):
     email: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
     comments: Mapped[list['Comment']] = relationship(back_populates='author')
     posts: Mapped[list['Post']] = relationship(back_populates='author')
-    follower_user: Mapped[list['Follower']] = relationship('Follower', foreign_keys='follower.user_from_id', back_populates='follower_user')
-    followed_user: Mapped[list['Follower']] = relationship('Follower', foreign_keys='follower.user_to_id', back_populates='followed_user')
+    following: Mapped[list['Follower']] = relationship('Follower', foreign_keys=[Follower.user_from_id], back_populates='follower_user')
+    followers: Mapped[list['Follower']] = relationship('Follower', foreign_keys=[Follower.user_to_id], back_populates='followed_user')
     def serialize(self):
         return {
             "id": self.id,
@@ -23,11 +31,7 @@ class User(db.Model):
             # do not serialize the password, its a security breach
         }
 
-class Follower(db.Model):
-    user_from_id: Mapped[int] = mapped_column(ForeignKey('users.id'), primary_key=True)
-    user_to_id: Mapped['int'] = mapped_column(ForeignKey('users.id'), primary_key=True)
-    follower: Mapped['User'] = relationship('User', foreign_keys =['user_from_id'], backref = 'following')
-    followed: Mapped['User'] = relationship('User', foreign_keys =['user_to_id'], backref = 'followers')
+
 
 
 class Comment(db.Model):
